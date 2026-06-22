@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mercato OM 2026 — Je garde ou je vends ?</title>
+<style>
+  /* ============================================================
+     MERCATO OM 2026 — Outil drag & drop
+     Couleurs Olympique de Marseille : bleu ciel / blanc / or
+     ============================================================ */
+  :root{
+    --om-blue:#2BAADF;
+    --om-blue-deep:#1577B0;
+    --om-navy:#0B2540;
+    --om-gold:#C9A24B;
+    --keep:#2BD17E;
+    --keep-deep:#13965a;
+    --sell:#FF5A6E;
+    --sell-deep:#cc2f43;
+    --cost:#E58A00;
+    --cost-deep:#9a5a00;
+    --loan-bg:#FFE7C2;
+    --exp-bg:#E9D9FF;
+    --exp-ink:#6b2fb3;
+    --bg:#0d1b2a;
+    --card:#ffffff;
+    --ink:#0B2540;
+    --muted:#5b7088;
+    --radius:16px;
+    --shadow:0 8px 22px rgba(6,22,40,.16);
+    --shadow-lg:0 24px 60px rgba(6,22,40,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 520px at 12% -8%, rgba(43,170,223,.08), transparent 60%),
+      radial-gradient(900px 460px at 112% 4%, rgba(201,162,75,.06), transparent 55%),
+      #ffffff;
+    min-height:100vh;
+    padding:18px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header.app-head{display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+  .logo{
+    width:54px;height:54px;border-radius:13px;flex:0 0 auto;
+    background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);overflow:hidden;
+  }
+  .logo img{width:42px;height:42px;object-fit:contain;}
+  .head-txt h1{margin:0;color:var(--om-navy);font-size:clamp(19px,3.2vw,28px);font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+  .head-txt h1 span{color:var(--om-blue-deep);}
+  .head-txt p{margin:4px 0 0;color:var(--muted);font-size:13.5px;}
+
+  /* ---------- Summary bar ---------- */
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:14px;}
+  .stat{background:#f3f7fb;border:1px solid #e4edf5;border-radius:11px;padding:8px 11px;}
+  .stat .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;}
+  .stat .v{font-size:clamp(15px,2.1vw,18px);font-weight:800;margin-top:2px;color:var(--om-navy);}
+  .stat.sell .v{color:var(--sell-deep);}
+  .stat.keep .v{color:var(--keep-deep);}
+  .stat.costc .v{color:var(--cost-deep);}
+  .stat .v small{font-size:12px;font-weight:600;color:var(--muted);}
+
+  /* ---------- Pool ---------- */
+  .panel-title{color:var(--om-navy);font-weight:700;font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .panel-title .pill{background:#eaf2fa;color:var(--om-blue-deep);font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);}
+  .legend i{border:1px solid rgba(11,37,64,.10);}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .pool{
+    background:#f4f8fc;border:1px dashed #cfddea;border-radius:var(--radius);
+    padding:12px;margin-bottom:18px;min-height:110px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px;
+    transition:background .15s,border-color .15s;
+  }
+  .pool.empty-hint::after{content:"✅ Tous les joueurs sont placés !";grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;padding:22px 0;}
+
+  /* ---------- Columns ---------- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .zone{border-radius:var(--radius);padding:13px;min-height:240px;border:2px solid transparent;transition:transform .12s, box-shadow .15s, border-color .15s, background .15s;}
+  .zone-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+  .zone-head h3{margin:0;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:7px;}
+  .zone-head .count{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;}
+  .zone.keep{background:linear-gradient(180deg,rgba(43,209,126,.16),rgba(43,209,126,.06));border-color:rgba(43,209,126,.35);}
+  .zone.keep h3{color:#0f8a52;}
+  .zone.keep .count{background:var(--keep-deep);}
+  .zone.sell{background:linear-gradient(180deg,rgba(255,90,110,.16),rgba(255,90,110,.06));border-color:rgba(255,90,110,.35);}
+  .zone.sell h3{color:#c92f43;}
+  .zone.sell .count{background:var(--sell-deep);}
+  .zone .list{display:flex;flex-direction:column;gap:8px;min-height:56px;}
+  .zone .foot{margin-top:11px;padding-top:10px;border-top:1px dashed rgba(11,37,64,.14);font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .zone.keep .foot{color:var(--cost-deep);}
+  .zone.sell .foot{color:var(--sell-deep);}
+  .zone .foot.hide{display:none;}
+  .zone .drop-hint{text-align:center;color:#7b93ab;font-size:13px;padding:24px 8px;border:2px dashed rgba(11,37,64,.12);border-radius:12px;}
+  .zone.keep .drop-hint{color:#3f9c6c;border-color:rgba(43,209,126,.3);}
+  .zone.sell .drop-hint{color:#cc6b78;border-color:rgba(255,90,110,.3);}
+  .zone.over{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+  .zone.keep.over{border-color:var(--keep);background:linear-gradient(180deg,rgba(43,209,126,.30),rgba(43,209,126,.12));}
+  .zone.sell.over{border-color:var(--sell);background:linear-gradient(180deg,rgba(255,90,110,.30),rgba(255,90,110,.12));}
+  .pool.over{background:rgba(43,170,223,.14);border-color:var(--om-blue);}
+
+  /* ---------- Player card (compact) ---------- */
+  .card{
+    position:relative;background:var(--card);border-radius:12px;box-shadow:var(--shadow);
+    padding:8px 7px;display:flex;flex-direction:column;align-items:center;text-align:center;
+    cursor:grab;user-select:none;touch-action:none;transition:transform .12s, box-shadow .15s;border:1px solid rgba(11,37,64,.06);
+  }
+  .card:active{cursor:grabbing;}
+  /* pool card = horizontal */
+  .card.pool-card{align-items:stretch;text-align:left;padding:8px;}
+  .pc-top{display:flex;align-items:center;gap:7px;}
+  .pc-info{flex:1;min-width:0;}
+  .pc-info .name{margin-top:0;}
+  .pc-info .tags{justify-content:flex-start;margin-top:4px;}
+  .card.in-list{flex-direction:row;text-align:left;padding:7px 9px;gap:9px;align-items:center;}
+  .card .photo{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#e8eef5;flex:0 0 auto;border:2px solid #fff;box-shadow:0 3px 7px rgba(6,22,40,.16);}
+  .card.in-list .photo{width:38px;height:38px;}
+  .card .photo-fallback{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px;border:2px solid #fff;box-shadow:0 3px 7px rgba(6,22,40,.16);background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .card.in-list .photo-fallback{width:38px;height:38px;font-size:13px;}
+  .card .meta{flex:1;min-width:0;}
+  .card .num{position:absolute;top:5px;left:5px;background:var(--om-navy);color:#fff;font-size:10px;font-weight:800;width:19px;height:19px;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+  .card.in-list .num{position:static;width:auto;height:auto;padding:1px 5px;border-radius:5px;font-size:10px;}
+  .card .name{font-weight:800;font-size:13px;margin-top:6px;line-height:1.15;color:var(--ink);}
+  .card.in-list .name{margin-top:0;font-size:13.5px;}
+  .card .pos{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .card .tags{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px;}
+  .card .val{font-size:10.5px;font-weight:800;color:var(--om-blue-deep);background:rgba(43,170,223,.12);padding:2px 7px;border-radius:999px;white-space:nowrap;}
+  .card .val.cost{color:var(--cost-deep);background:rgba(229,138,0,.14);}
+  .card.in-list .meta-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;}
+  .card.in-list .val{font-size:11px;}
+  .val.pos{color:var(--keep-deep);background:rgba(43,209,126,.14);}
+  .val.mut{color:var(--muted);background:rgba(11,37,64,.06);font-weight:700;}
+  /* status tags */
+  .tag{font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;line-height:1.3;}
+  .tag.loan{background:var(--loan-bg);color:var(--cost-deep);}
+  .tag.exp{background:var(--exp-bg);color:var(--exp-ink);}
+  .tag.ret{background:#D9ECFF;color:var(--om-blue-deep);}
+  .card .quick{display:flex;gap:4px;margin-top:7px;width:100%;}
+  .card.in-list .quick{display:none;}
+  .qbtn{flex:1;border:none;border-radius:7px;font-weight:800;font-size:9.5px;padding:5px 2px;cursor:pointer;color:#fff;transition:filter .12s, transform .1s;white-space:nowrap;}
+  .qbtn:active{transform:scale(.96);}
+  .qbtn.keep{background:var(--keep-deep);}
+  .qbtn.sell{background:var(--sell-deep);}
+  .qbtn:hover{filter:brightness(1.08);}
+  .card.in-list .back{background:rgba(11,37,64,.07);border:none;border-radius:8px;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:800;flex:0 0 auto;}
+  .card.in-list .back:hover{background:rgba(11,37,64,.14);}
+
+  .drag-ghost{position:fixed;z-index:9999;pointer-events:none;width:190px;transform:rotate(-2deg) scale(1.04);box-shadow:var(--shadow-lg);opacity:.97;}
+  .card.dragging{opacity:.35;}
+
+  /* ---------- Actions ---------- */
+  .actions{display:flex;gap:12px;justify-content:center;margin:24px 0 8px;flex-wrap:wrap;}
+  .btn{border:none;border-radius:12px;font-weight:800;font-size:15px;padding:14px 26px;cursor:pointer;transition:transform .12s, box-shadow .15s, filter .12s;letter-spacing:.01em;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:linear-gradient(135deg,var(--om-gold),#a9863a);color:#1a1303;box-shadow:0 10px 24px rgba(201,162,75,.4);}
+  .btn-primary:disabled{background:#3a4a5e;color:#7e8da0;box-shadow:none;cursor:not-allowed;}
+  .btn-primary:not(:disabled):hover{filter:brightness(1.05);transform:translateY(-1px);}
+  .btn-ghost{background:#eef3f8;color:var(--om-navy);border:1px solid #d8e2ec;}
+  .btn-ghost:hover{background:#e3ebf3;}
+  .hint-line{text-align:center;color:var(--muted);font-size:13px;margin-top:4px;}
+
+  /* ---------- Result modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(7,16,28,.78);backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;z-index:1000;overflow-y:auto;}
+  .overlay.show{display:flex;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .result{background:linear-gradient(180deg,#ffffff,#f3f7fb);border-radius:22px;max-width:780px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;animation:pop .3s cubic-bezier(.2,.9,.3,1.2);margin:auto 0;}
+  @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+  .result-head{background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));color:#fff;padding:22px 24px 20px;text-align:center;position:relative;}
+  .result-head h2{margin:0;font-size:23px;font-weight:900;letter-spacing:-.02em;}
+  .result-head p{margin:6px 0 0;color:#e7f4fb;font-size:14px;}
+  .result-head .close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:18px;cursor:pointer;font-weight:700;}
+
+  .bilan{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px;}
+  .bcell{border-radius:14px;padding:14px 10px;text-align:center;border:1px solid;}
+  .bcell .bl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+  .bcell .bv{font-size:clamp(18px,5vw,26px);font-weight:900;line-height:1;margin-top:5px;}
+  .bcell.pos{background:rgba(43,209,126,.12);border-color:rgba(43,209,126,.3);}
+  .bcell.pos .bl{color:#0f8a52;}.bcell.pos .bv{color:var(--keep-deep);}
+  .bcell.neg{background:rgba(229,138,0,.12);border-color:rgba(229,138,0,.3);}
+  .bcell.neg .bl{color:var(--cost-deep);}.bcell.neg .bv{color:var(--cost-deep);}
+  .bcell.net{background:linear-gradient(135deg,var(--om-navy),#13314f);border-color:transparent;}
+  .bcell.net .bl{color:#9fc7e6;}.bcell.net .bv{color:#fff;}
+  .bilan-note{margin:-6px 18px 8px;font-size:12px;color:#8090a4;text-align:center;}
+
+  .result-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px 18px 8px;}
+  .rcol h4{margin:0 0 8px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;}
+  .rcol.keep h4{color:var(--keep-deep);}
+  .rcol.sell h4{color:var(--sell-deep);}
+  .rcol ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .rcol li{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:6px 9px;box-shadow:0 2px 6px rgba(6,22,40,.06);font-size:13px;}
+  .rcol li img,.rcol li .mini-fb{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:0 0 auto;}
+  .rcol li .mini-fb{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .rcol li .rn{font-weight:700;flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
+  .rcol li .rn b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;}
+  .rcol li .rv{font-weight:800;font-size:12px;white-space:nowrap;}
+  .rcol li .rv.pos{color:var(--keep-deep);}
+  .rcol li .rv.cost{color:var(--cost-deep);}
+  .rcol li .rv.mut{color:var(--muted);font-weight:700;}
+  .rcol .ctot{margin-top:8px;font-size:12.5px;font-weight:800;text-align:right;}
+  .rcol.keep .ctot{color:var(--cost-deep);}
+  .empty-col{color:#9aabbd;font-size:13px;text-align:center;padding:16px 0;border:1px dashed #cdd9e4;border-radius:10px;}
+
+  .share{padding:8px 22px 24px;text-align:center;}
+  .share h4{margin:14px 0 12px;font-size:15px;color:var(--ink);font-weight:800;}
+  .share-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .sbtn{border:none;border-radius:12px;padding:12px 16px;font-weight:800;font-size:14px;cursor:pointer;color:#fff;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,filter .12s;}
+  .sbtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .sbtn svg{width:18px;height:18px;fill:currentColor;}
+  .sbtn.x{background:#000;}.sbtn.fb{background:#1877F2;}.sbtn.wa{background:#25D366;}
+  .sbtn.native{background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .sbtn.copy{background:var(--om-navy);}
+  .copied{font-size:13px;color:var(--keep-deep);font-weight:700;margin-top:10px;height:18px;}
+
+  footer.cred{text-align:center;color:var(--muted);font-size:12px;margin-top:18px;line-height:1.5;}
+  footer.cred a{color:var(--om-blue-deep);}
+
+  @media (min-width:880px){
+    .pool{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .qbtn{font-size:9px;padding:5px 1px;}
+  }
+  @media (max-width:680px){
+    body{padding:12px;}
+    .cols{grid-template-columns:1fr;}
+    .pool{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+    .result-cols{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-head">
+    <div class="logo"><img src="https://cdn.sportmonks.com/images/soccer/teams/12/44.png" alt="OM" onerror="this.style.display='none'"></div>
+    <div class="head-txt">
+      <h1>Mercato OM 2026 — <span>Je garde ou je vends&nbsp;?</span></h1>
+      <p>Compose le futur effectif olympien. Clique sur GARDER ou VENDRE pour chaque joueur (le glisser-déposer marche aussi).</p>
+    </div>
+  </header>
+
+  <div class="summary">
+    <div class="stat"><div class="k">Joueurs placés</div><div class="v"><span id="placed">0</span><small>/<span id="total">0</span></small></div></div>
+    <div class="stat keep"><div class="k">Je garde</div><div class="v" id="keepCount">0</div></div>
+    <div class="stat costc"><div class="k">Coût options (gardés)</div><div class="v" id="optCost">0 M€</div></div>
+    <div class="stat sell"><div class="k">Récupéré (ventes)</div><div class="v" id="sellTotal">0 M€</div></div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--loan-bg)"></i> <b>Prêté</b> — n'appartient pas à l'OM (vente = 0&nbsp;€, garder = payer l'option)</span>
+    <span><i style="background:var(--exp-bg)"></i> <b>Fin de contrat</b> — part libre, rapporte 0&nbsp;€</span>
+  </div>
+  <div class="pool" id="pool" data-zone="pool"></div>
+
+  <div class="cols">
+    <div class="zone keep" id="zoneKeep" data-zone="keep">
+      <div class="zone-head"><h3>✅ Je garde</h3><span class="count" id="keepBadge">0</span></div>
+      <div class="list" id="keepList"></div>
+      <div class="foot hide" id="keepFoot"><span>🛒 Options d'achat à payer</span><span id="keepFootVal">0 M€</span></div>
+    </div>
+    <div class="zone sell" id="zoneSell" data-zone="sell">
+      <div class="zone-head"><h3>💰 Je vends</h3><span class="count" id="sellBadge">0</span></div>
+      <div class="list" id="sellList"></div>
+      <div class="foot hide" id="sellFoot"><span>💰 Montant récupéré</span><span id="sellFootVal">0 M€</span></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="resetBtn">↺ Réinitialiser</button>
+    <button class="btn btn-primary" id="validateBtn" disabled>Valider la sélection ✓</button>
+  </div>
+  <p class="hint-line" id="hintLine">Place les 25 joueurs pour valider ta sélection.</p>
+
+  <footer class="cred">
+    Données : Sportmonks · Valeurs marchandes et options d'achat estimées (indicatives)
+  </footer>
+</div>
+
+<!-- Result modal -->
+<div class="overlay" id="overlay">
+  <div class="result">
+    <div class="result-head">
+      <button class="close" id="closeBtn">✕</button>
+      <h2>Ta sélection Mercato OM 🔵⚪</h2>
+      <p id="resultSub"></p>
+    </div>
+    <div class="bilan">
+      <div class="bcell pos"><div class="bl">Ventes</div><div class="bv" id="bSell">0</div></div>
+      <div class="bcell neg"><div class="bl">Options d'achat</div><div class="bv" id="bOpt">0</div></div>
+      <div class="bcell net"><div class="bl">Solde net</div><div class="bv" id="bNet">0</div></div>
+    </div>
+    <div class="bilan-note" id="bilanNote"></div>
+    <div class="result-cols">
+      <div class="rcol keep">
+        <h4>✅ Gardés (<span id="rKeepN">0</span>)</h4>
+        <ul id="rKeep"></ul>
+        <div class="ctot" id="rKeepCost"></div>
+      </div>
+      <div class="rcol sell">
+        <h4>💰 Vendus / laissés (<span id="rSellN">0</span>)</h4>
+        <ul id="rSell"></ul>
+        <div class="ctot" id="rSellTot"></div>
+      </div>
+    </div>
+    <div class="share">
+      <h4>Partage ta sélection 📣</h4>
+      <div class="share-btns">
+        <button class="sbtn native" id="shNative" style="display:none">📲 Partager</button>
+        <button class="sbtn x" id="shX"><svg viewBox="0 0 24 24"><path d="M18.9 1.6h3.5l-7.6 8.7L23.7 22h-7l-5.5-7.2L4.9 22H1.4l8.1-9.3L.7 1.6h7.2l5 6.6 5.9-6.6Zm-1.2 18.3h1.9L6.4 3.6H4.3l13.4 16.3Z"/></svg>X</button>
+        <button class="sbtn fb" id="shFb"><svg viewBox="0 0 24 24"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7v-3.5h3.1V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12Z"/></svg>Facebook</button>
+        <button class="sbtn wa" id="shWa"><svg viewBox="0 0 24 24"><path d="M.1 24l1.7-6.2A11.9 11.9 0 1 1 12 24a12 12 0 0 1-5.9-1.6L.1 24Zm6.3-3.9.4.2a9.9 9.9 0 0 0 5.2 1.4 9.9 9.9 0 1 0-8.4-4.6l.3.4-1 3.7 3.5-1.1ZM17.5 14c-.1-.2-.5-.4-1-.6-.5-.3-2.9-1.4-3.3-1.6-.4-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.3-1 .1-3-1.5-4.9-2.6-6.9-5.9-.5-.9.5-.8 1.5-2.8.1-.3.1-.6 0-.8-.2-.2-1.1-2.6-1.5-3.6-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6-.4.5-1.6 1.6-1.6 3.9 0 2.3 1.7 4.5 1.9 4.8.2.3 3.3 5 8 7 3 1.2 4.1 1.3 5.5 1.1.9-.1 2.9-1.2 3.3-2.3.4-1.1.4-2.1.3-2.3Z"/></svg>WhatsApp</button>
+        <button class="sbtn copy" id="shCopy">🔗 Copier le texte</button>
+      </div>
+      <div class="copied" id="copied"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   CONFIGURATION — à personnaliser
+   ================================================================= */
+const CONFIG = {
+  shareUrl: "https://www.tonsite.fr/mercato-om/",   // URL de ta page WordPress
+  hashtags: "MercatoOM,TeamOM,DroitAuBut"
+};
+
+/* =================================================================
+   DONNÉES — Effectif OM 2025/2026 (source Sportmonks).
+   "val" = valeur marchande estimée en M€ (INDICATIVE — édite librement).
+   ================================================================= */
+const PLAYERS = [{"id": 186418, "name": "Gerónimo Rulli", "pos": "Gardien", "group": "Gardien", "num": 1, "img": "https://cdn.sportmonks.com/images/soccer/players/18/186418.png", "val": 6}, {"id": 29186, "name": "Jeffrey de Lange", "pos": "Gardien", "group": "Gardien", "num": 12, "img": "https://cdn.sportmonks.com/images/soccer/players/2/29186.png", "val": 2.5}, {"id": 28575687, "name": "CJ Egan-Riley", "pos": "Défenseur", "group": "Défenseur", "num": 4, "img": "https://cdn.sportmonks.com/images/soccer/players/7/28575687.png", "val": 10}, {"id": 13171199, "name": "Leonardo Balerdi", "pos": "Défenseur central", "group": "Défenseur", "num": 5, "img": "https://cdn.sportmonks.com/images/soccer/players/31/13171199.png", "val": 25}, {"id": 586846, "name": "Derek Cornelius", "pos": "Défenseur central", "group": "Défenseur", "num": 13, "img": "https://cdn.sportmonks.com/images/soccer/players/30/586846.png", "val": 2}, {"id": 516291, "name": "Nayef Aguerd", "pos": "Défenseur central", "group": "Défenseur", "num": 21, "img": "https://cdn.sportmonks.com/images/soccer/players/3/516291.png", "val": 15}, {"id": 35574, "name": "Benjamin Pavard", "pos": "Défenseur central", "group": "Défenseur", "num": 28, "img": "https://cdn.sportmonks.com/images/soccer/players/22/35574.png", "val": 25}, {"id": 335521, "name": "Facundo Medina", "pos": "Défenseur central", "group": "Défenseur", "num": 32, "img": "https://cdn.sportmonks.com/images/soccer/players/1/335521.png", "val": 22}, {"id": 129794, "name": "Emerson", "pos": "Latéral gauche", "group": "Défenseur", "num": 33, "img": "https://cdn.sportmonks.com/images/soccer/players/2/129794.png", "val": 8}, {"id": 37619977, "name": "Tochukwu Nnadi", "pos": "Milieu défensif", "group": "Milieu", "num": 6, "img": "https://cdn.sportmonks.com/images/soccer/players/9/37619977.png", "val": 4}, {"id": 524849, "name": "Himad Abdelli", "pos": "Milieu offensif", "group": "Milieu", "num": 8, "img": "https://cdn.sportmonks.com/images/soccer/players/17/524849.png", "val": 5}, {"id": 37599086, "name": "Arthur Vermeeren", "pos": "Milieu défensif", "group": "Milieu", "num": 18, "img": "https://cdn.sportmonks.com/images/soccer/players/14/37599086.png", "val": 22}, {"id": 95696, "name": "Geoffrey Kondogbia", "pos": "Milieu défensif", "group": "Milieu", "num": 19, "img": "https://cdn.sportmonks.com/images/soccer/players/16/95696.png", "val": 2}, {"id": 537332, "name": "Timothy Weah", "pos": "Milieu droit", "group": "Milieu", "num": 22, "img": "https://cdn.sportmonks.com/images/soccer/players/20/537332.png", "val": 16}, {"id": 1744, "name": "P-E. Højbjerg", "pos": "Milieu défensif", "group": "Milieu", "num": 23, "img": "https://cdn.sportmonks.com/images/soccer/players/16/1744.png", "val": 15}, {"id": 37541144, "name": "Bilal Nadir", "pos": "Milieu central", "group": "Milieu", "num": 26, "img": "https://cdn.sportmonks.com/images/soccer/players/24/37541144.png", "val": 8}, {"id": 6306068, "name": "Quinten Timber", "pos": "Milieu central", "group": "Milieu", "num": 27, "img": "https://cdn.sportmonks.com/images/soccer/players/20/6306068.png", "val": 25}, {"id": 433458, "name": "Amine Gouiri", "pos": "Avant-centre", "group": "Attaquant", "num": 9, "img": "https://cdn.sportmonks.com/images/soccer/players/18/433458.png", "val": 25}, {"id": 20333643, "name": "Mason Greenwood", "pos": "Ailier droit", "group": "Attaquant", "num": 10, "img": "https://cdn.sportmonks.com/images/soccer/players/11/20333643.png", "val": 50}, {"id": 29328428, "name": "Igor Paixão", "pos": "Ailier gauche", "group": "Attaquant", "num": 14, "img": "https://cdn.sportmonks.com/images/soccer/players/12/29328428.png", "val": 35}, {"id": 31739, "name": "P-E. Aubameyang", "pos": "Avant-centre", "group": "Attaquant", "num": 17, "img": "https://cdn.sportmonks.com/images/soccer/players/27/31739.png", "val": 5}, {"id": 2511082, "name": "Hamed Traoré", "pos": "Milieu offensif", "group": "Milieu", "num": 20, "img": "https://cdn.sportmonks.com/images/soccer/players/10/2511082.png", "val": 12}];
+
+/* Joueurs DE RETOUR DE PRÊT (propriété de l'OM -> vendables, rapportent leur valeur) */
+const RETURNING = [
+  {id:608285,   name:"Angel Gomes",      pos:"Milieu offensif", group:"Milieu",    img:"https://cdn.sportmonks.com/images/soccer/players/29/608285.png",   val:10, ret:true},
+  {id:37369302, name:"Bamo Meïté",       pos:"Défenseur central", group:"Défenseur", img:"https://cdn.sportmonks.com/images/soccer/players/22/37369302.png", val:6,  ret:true},
+  {id:96691,    name:"Amine Harit",      pos:"Milieu offensif", group:"Milieu",    img:"https://cdn.sportmonks.com/images/soccer/players/19/96691.png",    val:5,  ret:true},
+  {id:20315925, name:"Faris Moumbagna",  pos:"Avant-centre",    group:"Attaquant", img:"https://cdn.sportmonks.com/images/soccer/players/21/20315925.png", val:3,  ret:true},
+  {id:32390,    name:"Ulisses Garcia",   pos:"Latéral gauche",  group:"Défenseur", img:"https://cdn.sportmonks.com/images/soccer/players/6/32390.png",     val:3,  ret:true}
+];
+RETURNING.forEach(p=>PLAYERS.push(p));
+
+/* =================================================================
+   STATUTS PARTICULIERS
+   - loan  : joueur prêté -> ne rapporte rien à la vente.
+             option = montant (M€) à payer pour le garder, ou null si pas d'option.
+   - expiring : fin de contrat -> part libre, rapporte 0 €.
+   ================================================================= */
+const LOAN = {              // nom -> option d'achat (M€) ou null
+  "Benjamin Pavard": 15,
+  "Arthur Vermeeren": 20,
+  "Facundo Medina": 18,
+  "Timothy Weah": 14,
+  "Hamed Junior Traoré": 8
+};
+const EXPIRING = ["Bilal Nadir"];
+
+PLAYERS.forEach(p=>{
+  if(p.ret){ p.status='returning'; p.option=null; }
+  else if(p.name in LOAN){ p.status='loan'; p.option=LOAN[p.name]; }
+  else if(EXPIRING.includes(p.name)){ p.status='expiring'; p.option=null; }
+  else { p.status='owned'; p.option=null; }
+});
+
+/* Tri par poste : Gardiens -> Défenseurs -> Milieux -> Attaquants (ordre stable dans chaque groupe) */
+const GROUP_ORDER = {"Gardien":0, "Défenseur":1, "Milieu":2, "Attaquant":3};
+PLAYERS.sort((a,b)=>(GROUP_ORDER[a.group] ?? 9) - (GROUP_ORDER[b.group] ?? 9));
+
+/* =================================================================
+   ÉTAT & HELPERS
+   ================================================================= */
+const TOTAL = PLAYERS.length;
+const state = {};
+PLAYERS.forEach(p => state[p.id] = 'pool');
+
+const $ = s => document.querySelector(s);
+const pool=$('#pool'), keepList=$('#keepList'), sellList=$('#sellList');
+
+function fmtM(n){
+  const s = Number.isInteger(n) ? n.toString() : n.toFixed(1).replace('.', ',');
+  return s + ' M€';
+}
+function fmtSigned(n){
+  if(n===0) return '0 M€';
+  return (n>0?'+':'−') + fmtM(Math.abs(n));
+}
+function initials(name){
+  const parts=name.split(' ').filter(Boolean);
+  return ((parts[0]?.[0]||'')+(parts[parts.length-1]?.[0]||'')).toUpperCase();
+}
+// nom de famille uniquement (en conservant les particules : de, van, da…)
+const NAME_PARTICLES=new Set(['de','del','van','von','da','dos','das','di','le','la','el','bin','ben']);
+function lastName(name){
+  const parts=name.trim().split(/\s+/);
+  if(parts.length<=1) return name;
+  let i=parts.length-1;
+  while(i-1>=0 && NAME_PARTICLES.has(parts[i-1].toLowerCase())) i--;
+  return parts.slice(i).join(' ');
+}
+// recovery from selling/letting a player go (loans & free agents bring nothing)
+function recovery(p){ return (p.status==='loan'||p.status==='expiring') ? 0 : p.val; }
+// cost to keep a player (buy-option for loans)
+function keepCost(p){ return (p.status==='loan' && p.option!=null) ? p.option : 0; }
+function statusTag(p, prefix=''){
+  if(p.status==='loan') return `<span class="tag loan">${prefix}Prêté</span>`;
+  if(p.status==='expiring') return `<span class="tag exp">${prefix}Fin de contrat</span>`;
+  return '';
+}
+function photoHTML(p, cls){
+  return `<img class="${cls}" src="${p.img}" alt="${p.name}" loading="lazy"
+    onerror="this.outerHTML='<div class=&quot;${cls} photo-fallback&quot;>${initials(p.name)}</div>'">`;
+}
+
+/* =================================================================
+   CARTES
+   ================================================================= */
+function buildPoolCard(p){
+  const el=document.createElement('div');
+  el.className='card pool-card'; el.dataset.id=p.id;
+
+  let money='';
+  if(p.status==='loan' && p.option!=null) money=`<span class="val cost">Option ${fmtM(p.option)}</span>`;
+  else if(recovery(p)>0) money=`<span class="val">${fmtM(p.val)}</span>`;
+
+  const sellLabel = (p.status==='loan'||p.status==='expiring') ? '↩ Laisser' : '💰 Vendre';
+
+  el.innerHTML=`
+    <div class="pc-top">
+      ${photoHTML(p,'photo')}
+      <div class="pc-info">
+        <div class="name">${lastName(p.name)}</div>
+        <div class="tags">${statusTag(p)}${money}</div>
+      </div>
+    </div>
+    <div class="quick">
+      <button class="qbtn keep" data-act="keep">✅ Garder</button>
+      <button class="qbtn sell" data-act="sell">${sellLabel}</button>
+    </div>`;
+  return el;
+}
+function buildListCard(p, zone){
+  const el=document.createElement('div');
+  el.className='card in-list'; el.dataset.id=p.id;
+
+  let right='';
+  if(zone==='keep'){
+    if(p.status==='loan' && p.option!=null) right=`<span class="val cost">🛒 ${fmtM(p.option)}</span>`;
+    else if(p.status==='loan') right=`<span class="val mut">Prêté</span>`;
+    else if(p.status==='expiring') right=`<span class="val mut">Libre</span>`;
+    else right=`<span class="val mut">${fmtM(p.val)}</span>`;
+  } else { // sell
+    if(recovery(p)>0) right=`<span class="val pos">+${fmtM(p.val)}</span>`;
+    else right=`<span class="val mut">0 €</span>`;
+  }
+
+  el.innerHTML=`
+    ${photoHTML(p,'photo')}
+    <div class="meta">
+      <div class="name">${lastName(p.name)}</div>
+      ${statusTag(p) ? `<div class="pos">${statusTag(p)}</div>` : ''}
+    </div>
+    <div class="meta-right">${right}</div>
+    <button class="back" title="Renvoyer dans l'effectif">↩</button>`;
+  return el;
+}
+
+/* =================================================================
+   RENDU
+   ================================================================= */
+function render(){
+  pool.innerHTML=''; keepList.innerHTML=''; sellList.innerHTML='';
+  let keepN=0, sellN=0, sellSum=0, optCost=0, placed=0;
+
+  PLAYERS.forEach(p=>{
+    const z=state[p.id];
+    if(z==='pool'){ pool.appendChild(buildPoolCard(p)); }
+    else if(z==='keep'){ keepList.appendChild(buildListCard(p,'keep')); keepN++; placed++; optCost+=keepCost(p); }
+    else if(z==='sell'){ sellList.appendChild(buildListCard(p,'sell')); sellN++; placed++; sellSum+=recovery(p); }
+  });
+
+  pool.classList.toggle('empty-hint', pool.children.length===0);
+  if(keepN===0) keepList.innerHTML='<div class="drop-hint">Glisse ici les joueurs à conserver</div>';
+  if(sellN===0) sellList.innerHTML='<div class="drop-hint">Glisse ici les joueurs à vendre / laisser partir</div>';
+
+  // footers
+  const kf=$('#keepFoot'), sf=$('#sellFoot');
+  kf.classList.toggle('hide', optCost===0); $('#keepFootVal').textContent=fmtM(optCost);
+  sf.classList.toggle('hide', sellN===0); $('#sellFootVal').textContent=fmtM(sellSum);
+
+  $('#placed').textContent=placed;
+  $('#total').textContent=TOTAL;
+  $('#keepCount').textContent=keepN;
+  $('#optCost').textContent=fmtM(optCost);
+  $('#sellTotal').textContent=fmtM(sellSum);
+  $('#keepBadge').textContent=keepN;
+  $('#sellBadge').textContent=sellN;
+
+  const done=placed===TOTAL;
+  $('#validateBtn').disabled=!done;
+  $('#hintLine').textContent = done ? '🎉 Sélection complète ! Tu peux valider.' : `Encore ${TOTAL-placed} joueur(s) à placer pour valider.`;
+
+  attachInteractions();
+  postHeight();
+}
+
+/* =================================================================
+   INTERACTIONS : drag & drop (pointer) + boutons rapides
+   ================================================================= */
+function moveTo(id, zone){ state[id]=zone; render(); }
+function attachInteractions(){
+  document.querySelectorAll('.card').forEach(c=>c.addEventListener('pointerdown', onPointerDown));
+  document.querySelectorAll('.qbtn').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation();
+    moveTo(+e.target.closest('.card').dataset.id, e.target.dataset.act);
+  }));
+  document.querySelectorAll('.card.in-list .back').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation();
+    moveTo(+e.target.closest('.card').dataset.id, 'pool');
+  }));
+}
+
+let drag=null;
+function onPointerDown(e){
+  if(e.target.closest('.qbtn')||e.target.closest('.back')) return;
+  if(e.button && e.button!==0) return;
+  const card=e.currentTarget, rect=card.getBoundingClientRect();
+  drag={id:+card.dataset.id, card, started:false, startX:e.clientX, startY:e.clientY,
+        offX:e.clientX-rect.left, offY:e.clientY-rect.top, ghost:null, overZone:null};
+  card.setPointerCapture(e.pointerId);
+  card.addEventListener('pointermove', onPointerMove);
+  card.addEventListener('pointerup', onPointerUp);
+  card.addEventListener('pointercancel', onPointerUp);
+}
+function onPointerMove(e){
+  if(!drag) return;
+  if(!drag.started){
+    if(Math.hypot(e.clientX-drag.startX, e.clientY-drag.startY) < 6) return;
+    startGhost();
+  }
+  const g=drag.ghost;
+  g.style.left=(e.clientX-drag.offX)+'px';
+  g.style.top=(e.clientY-drag.offY)+'px';
+  g.style.display='none';
+  const below=document.elementFromPoint(e.clientX,e.clientY);
+  g.style.display='';
+  setOver(below ? below.closest('[data-zone]') : null);
+}
+function startGhost(){
+  drag.started=true;
+  const g=drag.card.cloneNode(true);
+  g.classList.add('drag-ghost'); g.classList.remove('in-list');
+  g.style.width='190px';
+  document.body.appendChild(g);
+  drag.ghost=g; drag.card.classList.add('dragging');
+}
+function setOver(zoneEl){
+  if(drag.overZone===zoneEl) return;
+  if(drag.overZone) drag.overZone.classList.remove('over');
+  drag.overZone=zoneEl;
+  if(zoneEl) zoneEl.classList.add('over');
+}
+function onPointerUp(){
+  if(!drag) return;
+  const card=drag.card;
+  card.removeEventListener('pointermove', onPointerMove);
+  card.removeEventListener('pointerup', onPointerUp);
+  card.removeEventListener('pointercancel', onPointerUp);
+  if(drag.started){
+    if(drag.ghost) drag.ghost.remove();
+    card.classList.remove('dragging');
+    if(drag.overZone){ const z=drag.overZone.dataset.zone; drag.overZone.classList.remove('over'); moveTo(drag.id, z); }
+  }
+  drag=null;
+}
+
+/* =================================================================
+   ACTIONS
+   ================================================================= */
+$('#resetBtn').addEventListener('click', ()=>{ PLAYERS.forEach(p=>state[p.id]='pool'); render(); });
+$('#validateBtn').addEventListener('click', showResult);
+$('#closeBtn').addEventListener('click', ()=>$('#overlay').classList.remove('show'));
+$('#overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') $('#overlay').classList.remove('show'); });
+
+function selection(){
+  const keep=PLAYERS.filter(p=>state[p.id]==='keep');
+  const sell=PLAYERS.filter(p=>state[p.id]==='sell');
+  const sellSum=sell.reduce((a,p)=>a+recovery(p),0);
+  const optCost=keep.reduce((a,p)=>a+keepCost(p),0);
+  return {keep, sell, sellSum, optCost, net:sellSum-optCost};
+}
+
+function showResult(){
+  const {keep, sell, sellSum, optCost, net}=selection();
+
+  $('#resultSub').textContent=`${keep.length} gardé(s) · ${sell.length} vendu(s)/laissé(s)`;
+  $('#bSell').textContent=fmtSigned(sellSum);
+  $('#bOpt').textContent = optCost? '−'+fmtM(optCost) : '0 M€';
+  $('#bNet').textContent=fmtSigned(net);
+
+  const keptLoans=keep.filter(p=>keepCost(p)>0);
+  const freeGo=sell.filter(p=>recovery(p)===0);
+  let note=[];
+  if(keptLoans.length) note.push(`${keptLoans.length} option(s) d'achat levée(s)`);
+  if(freeGo.length) note.push(`${freeGo.length} prêté(s)/fin de contrat laissé(s) (0 €)`);
+  $('#bilanNote').textContent = note.length ? note.join(' · ') : 'Tous tes joueurs t\'appartiennent.';
+
+  $('#rKeepN').textContent=keep.length;
+  $('#rSellN').textContent=sell.length;
+
+  const liKeep=p=>{
+    let rv;
+    if(keepCost(p)>0) rv=`<span class="rv cost">🛒 ${fmtM(p.option)}</span>`;
+    else if(recovery(p)>0) rv=`<span class="rv mut">${fmtM(p.val)}</span>`;
+    else rv=`<span class="rv mut">${p.status==='loan'?'Prêté':'Libre'}</span>`;
+    const sub = p.status==='returning' ? statusTag(p) : '';
+    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}</span>${rv}</li>`;
+  };
+  const liSell=p=>{
+    const rv = recovery(p)>0 ? `<span class="rv pos">+${fmtM(p.val)}</span>` : `<span class="rv mut">0 €</span>`;
+    let sub='';
+    if(p.status==='loan') sub=`<span class="tag loan" style="margin-top:2px">Prêté · retour club</span>`;
+    else if(p.status==='expiring') sub=`<span class="tag exp" style="margin-top:2px">Fin de contrat · libre</span>`;
+    else if(p.status==='returning') sub=statusTag(p);
+    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}</span>${rv}</li>`;
+  };
+
+  $('#rKeep').innerHTML = keep.length ? keep.map(liKeep).join('') : '<div class="empty-col">Aucun joueur gardé</div>';
+  $('#rSell').innerHTML = sell.length ? sell.map(liSell).join('') : '<div class="empty-col">Aucun joueur vendu</div>';
+  $('#rKeepCost').textContent = optCost ? `Coût des options : ${fmtM(optCost)}` : '';
+  $('#rSellTot').textContent  = `Récupéré : ${fmtM(sellSum)}`;
+
+  // fix mini avatar class (uses .mini -> style as mini-fb on error)
+  document.querySelectorAll('#rKeep .mini, #rSell .mini').forEach(img=>{
+    img.style.width='28px';img.style.height='28px';img.style.borderRadius='50%';img.style.objectFit='cover';img.style.flex='0 0 auto';
+  });
+
+  $('#overlay').classList.add('show');
+  $('#copied').textContent='';
+  postHeight();
+}
+
+/* =================================================================
+   PARTAGE
+   ================================================================= */
+function shareText(){
+  const {keep, sell, sellSum, optCost, net}=selection();
+  let t=`🔵⚪ Mon Mercato OM 2026 !\n`;
+  t+=`Je garde ${keep.length} joueur(s) et je me sépare de ${sell.length}.\n`;
+  t+=`💰 ${fmtM(sellSum)} récupérés en ventes`;
+  if(optCost) t+=` · ${fmtM(optCost)} d'options d'achat à payer`;
+  t+=`.\n🧮 Solde net : ${fmtSigned(net)}.\nEt toi, tu gardes qui ? 👇`;
+  return t;
+}
+const openShare=u=>window.open(u,'_blank','noopener,noreferrer');
+$('#shX').addEventListener('click', ()=>openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText())}&url=${encodeURIComponent(CONFIG.shareUrl)}&hashtags=${encodeURIComponent(CONFIG.hashtags)}`));
+$('#shFb').addEventListener('click', ()=>openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(CONFIG.shareUrl)}&quote=${encodeURIComponent(shareText())}`));
+$('#shWa').addEventListener('click', ()=>openShare(`https://wa.me/?text=${encodeURIComponent(shareText()+'\n'+CONFIG.shareUrl)}`));
+$('#shCopy').addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText(shareText()+'\n'+CONFIG.shareUrl); $('#copied').textContent='✓ Texte copié !'; }
+  catch(_){ $('#copied').textContent='Copie impossible — sélectionne et copie manuellement.'; }
+});
+if(navigator.share){
+  const b=$('#shNative'); b.style.display='inline-flex';
+  b.addEventListener('click', ()=>navigator.share({title:'Mercato OM 2026', text:shareText(), url:CONFIG.shareUrl}).catch(()=>{}));
+}
+
+/* =================================================================
+   IFRAME : auto-hauteur (optionnel côté WordPress)
+   ================================================================= */
+function postHeight(){
+  if(window.parent===window) return;
+  window.parent.postMessage({type:'mercato-om-height', height:document.documentElement.scrollHeight}, '*');
+}
+window.addEventListener('resize', postHeight);
+
+render();
+</script>
+</body>
+</html>

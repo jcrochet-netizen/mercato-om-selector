@@ -178,10 +178,13 @@
   .result-head p{margin:6px 0 0;color:#e7f4fb;font-size:14px;}
   .result-head .close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:18px;cursor:pointer;font-weight:700;}
 
-  .bilan{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px;}
-  .bcell{border-radius:14px;padding:14px 10px;text-align:center;border:1px solid;}
-  .bcell .bl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
-  .bcell .bv{font-size:clamp(18px,5vw,26px);font-weight:900;line-height:1;margin-top:5px;}
+  .bilan{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px;}
+  .bcell{border-radius:14px;padding:13px 8px;text-align:center;border:1px solid;}
+  .bcell .bl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .bcell .bv{font-size:clamp(17px,4.4vw,23px);font-weight:900;line-height:1.05;margin-top:5px;}
+  .bcell.sal{background:rgba(43,170,223,.12);border-color:rgba(43,170,223,.3);}
+  .bcell.sal .bl{color:var(--om-blue-deep);}
+  .bcell.sal .bv{color:var(--om-blue-deep);font-size:clamp(15px,3.4vw,19px);}
   .bcell.pos{background:rgba(43,209,126,.12);border-color:rgba(43,209,126,.3);}
   .bcell.pos .bl{color:#0f8a52;}.bcell.pos .bv{color:var(--keep-deep);}
   .bcell.neg{background:rgba(229,138,0,.12);border-color:rgba(229,138,0,.3);}
@@ -315,6 +318,7 @@
       <p id="resultSub"></p>
     </div>
     <div class="bilan">
+      <div class="bcell sal"><div class="bl">Salaires économisés</div><div class="bv" id="bSalSaved">0</div></div>
       <div class="bcell pos"><div class="bl">Ventes</div><div class="bv" id="bSell">0</div></div>
       <div class="bcell neg"><div class="bl">Options d'achat</div><div class="bv" id="bOpt">0</div></div>
       <div class="bcell net"><div class="bl">Solde net</div><div class="bv" id="bNet">0</div></div>
@@ -389,7 +393,7 @@ const LOAN = {              // nom -> option d'achat (M€) ou null
   "Arthur Vermeeren": 20,
   "Facundo Medina": 18,
   "Timothy Weah": 14,
-  "Hamed Junior Traoré": 8
+  "Hamed Traoré": 8
 };
 const EXPIRING = ["Bilal Nadir"];
 
@@ -667,13 +671,15 @@ function selection(){
   const sell=PLAYERS.filter(p=>state[p.id]==='sell');
   const sellSum=sell.reduce((a,p)=>a+recovery(p),0);
   const optCost=keep.reduce((a,p)=>a+keepCost(p),0);
-  return {keep, sell, sellSum, optCost, net:sellSum-optCost};
+  const salSaved=sell.reduce((a,p)=>a+(p.sal||0),0); // masse salariale libérée par les départs
+  return {keep, sell, sellSum, optCost, salSaved, net:sellSum-optCost};
 }
 
 function showResult(){
-  const {keep, sell, sellSum, optCost, net}=selection();
+  const {keep, sell, sellSum, optCost, salSaved, net}=selection();
 
   $('#resultSub').textContent=`${keep.length} gardé(s) · ${sell.length} vendu(s)/laissé(s)`;
+  $('#bSalSaved').textContent = salSaved>0 ? '+'+salSaved.toFixed(1).replace(/\.0$/,'').replace('.', ',')+' M€/an' : '0 M€/an';
   $('#bSell').textContent=fmtSigned(sellSum);
   $('#bOpt').textContent = optCost? '−'+fmtM(optCost) : '0 M€';
   $('#bNet').textContent=fmtSigned(net);

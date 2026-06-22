@@ -143,6 +143,7 @@
   .tag.loan{background:var(--loan-bg);color:var(--cost-deep);}
   .tag.exp{background:var(--exp-bg);color:var(--exp-ink);}
   .tag.ret{background:#D9ECFF;color:var(--om-blue-deep);}
+  .tag.exer{background:#D6F4E4;color:#0f8a52;}
   .card .quick{display:flex;gap:4px;margin-top:7px;width:100%;}
   .card.in-list .quick{display:none;}
   .qbtn{flex:1;border:none;border-radius:7px;font-weight:800;font-size:9.5px;padding:5px 2px;cursor:pointer;color:#fff;transition:filter .12s, transform .1s;white-space:nowrap;}
@@ -281,6 +282,7 @@
   <div class="legend">
     <span><i style="background:var(--loan-bg)"></i> <b>Prêté</b> — n'appartient pas à l'OM (vente = 0&nbsp;€, garder = payer l'option)</span>
     <span><i style="background:var(--exp-bg)"></i> <b>Fin de contrat</b> — part libre, rapporte 0&nbsp;€</span>
+    <span><i style="background:#D6F4E4"></i> <b>Option levée</b> — option obligatoire, désormais joueur de l'OM</span>
   </div>
   <div class="pool" id="pool" data-zone="pool"></div>
 
@@ -388,13 +390,12 @@ RETURNING.forEach(p=>PLAYERS.push(p));
              option = montant (M€) à payer pour le garder, ou null si pas d'option.
    - expiring : fin de contrat -> part libre, rapporte 0 €.
    ================================================================= */
-const LOAN = {              // nom -> option d'achat (M€) ou null
+const LOAN = {              // prêts OPTIONNELS : nom -> option d'achat (M€)
   "Benjamin Pavard": 15,
-  "Arthur Vermeeren": 20,
-  "Facundo Medina": 18,
-  "Timothy Weah": 14,
-  "Hamed Traoré": 8
+  "Arthur Vermeeren": 20
 };
+/* Options d'achat OBLIGATOIRES (déjà levées) -> joueurs de l'effectif OM, vendables. */
+const EXERCISED = ["Facundo Medina", "Timothy Weah", "Hamed Traoré"];
 const EXPIRING = ["Bilal Nadir"];
 
 /* Salaire annuel brut estimé (M€/an) — source Capology. Clé = id joueur. */
@@ -430,6 +431,7 @@ const SALARIES = {
 
 PLAYERS.forEach(p=>{
   if(p.ret){ p.status='returning'; p.option=null; }
+  else if(EXERCISED.includes(p.name)){ p.status='exercised'; p.option=null; }
   else if(p.name in LOAN){ p.status='loan'; p.option=LOAN[p.name]; }
   else if(EXPIRING.includes(p.name)){ p.status='expiring'; p.option=null; }
   else { p.status='owned'; p.option=null; }
@@ -481,6 +483,7 @@ function keepCost(p){ return (p.status==='loan' && p.option!=null) ? p.option : 
 function statusTag(p, prefix=''){
   if(p.status==='loan') return `<span class="tag loan">${prefix}Prêté</span>`;
   if(p.status==='expiring') return `<span class="tag exp">${prefix}Fin de contrat</span>`;
+  if(p.status==='exercised') return `<span class="tag exer">${prefix}Option levée</span>`;
   return '';
 }
 function salaryPill(p){
@@ -699,7 +702,7 @@ function showResult(){
     if(keepCost(p)>0) rv=`<span class="rv cost">🛒 ${fmtM(p.option)}</span>`;
     else if(recovery(p)>0) rv=`<span class="rv mut">${fmtM(p.val)}</span>`;
     else rv=`<span class="rv mut">${p.status==='loan'?'Prêté':'Libre'}</span>`;
-    const sub = p.status==='returning' ? statusTag(p) : '';
+    const sub = (p.status==='returning'||p.status==='exercised') ? statusTag(p) : '';
     return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}${salLine(p)}</span>${rv}</li>`;
   };
   const liSell=p=>{
@@ -707,7 +710,7 @@ function showResult(){
     let sub='';
     if(p.status==='loan') sub=`<span class="tag loan" style="margin-top:2px">Prêté · retour club</span>`;
     else if(p.status==='expiring') sub=`<span class="tag exp" style="margin-top:2px">Fin de contrat · libre</span>`;
-    else if(p.status==='returning') sub=statusTag(p);
+    else if(p.status==='returning'||p.status==='exercised') sub=statusTag(p);
     return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}${salLine(p)}</span>${rv}</li>`;
   };
 

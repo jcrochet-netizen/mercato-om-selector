@@ -133,6 +133,7 @@
   .card .tags{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px;}
   .card .val{font-size:10.5px;font-weight:800;color:var(--om-blue-deep);background:rgba(43,170,223,.12);padding:2px 7px;border-radius:999px;white-space:nowrap;}
   .card .val.cost{color:var(--cost-deep);background:rgba(229,138,0,.14);}
+  .card .val.sal{color:#46566b;background:#eceff3;}
   .card.in-list .meta-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;}
   .card.in-list .val{font-size:11px;}
   .val.pos{color:var(--keep-deep);background:rgba(43,209,126,.14);}
@@ -297,7 +298,8 @@
   <p class="hint-line" id="hintLine">Place les 25 joueurs pour valider ta sélection.</p>
 
   <footer class="cred">
-    Données : Sportmonks · Valeurs marchandes et options d'achat estimées (indicatives)
+    Données : Sportmonks · Valeurs marchandes et options d'achat estimées (indicatives)<br>
+    Données salaires : capology.com
   </footer>
 </div>
 
@@ -388,11 +390,41 @@ const LOAN = {              // nom -> option d'achat (M€) ou null
 };
 const EXPIRING = ["Bilal Nadir"];
 
+/* Salaire annuel brut estimé (M€/an) — source Capology. Clé = id joueur. */
+const SALARIES = {
+  35574:9.09,    // Pavard
+  1744:7.95,     // Højbjerg
+  20333643:6.81, // Greenwood
+  95696:6.81,    // Kondogbia
+  29328428:6.36, // Paixão
+  516291:6.14,   // Aguerd
+  31739:5.69,    // Aubameyang
+  433458:5.69,   // Gouiri
+  537332:5.69,   // Weah
+  6306068:5.69,  // Timber
+  13171199:5.45, // Balerdi
+  335521:5.23,   // Medina
+  2511082:5.00,  // Hamed Traoré
+  129794:4.55,   // Emerson
+  186418:3.41,   // Rulli
+  37599086:3.41, // Vermeeren
+  608285:2.50,   // Angel Gomes
+  28575687:2.27, // Egan-Riley
+  96691:1.89,    // Harit
+  32390:1.25,    // Ulisses Garcia
+  29186:1.14,    // De Lange
+  524849:1.14,   // Abdelli
+  37541144:1.02, // Bilal Nadir
+  37619977:0.69  // Nnadi
+  // manquants : Cornelius (586846), Bamo Meïté (37369302), Moumbagna (20315925)
+};
+
 PLAYERS.forEach(p=>{
   if(p.ret){ p.status='returning'; p.option=null; }
   else if(p.name in LOAN){ p.status='loan'; p.option=LOAN[p.name]; }
   else if(EXPIRING.includes(p.name)){ p.status='expiring'; p.option=null; }
   else { p.status='owned'; p.option=null; }
+  p.sal = SALARIES[p.id];
 });
 
 /* Tri par poste : Gardiens -> Défenseurs -> Milieux -> Attaquants (ordre stable dans chaque groupe) */
@@ -417,6 +449,9 @@ function fmtSigned(n){
   if(n===0) return '0 M€';
   return (n>0?'+':'−') + fmtM(Math.abs(n));
 }
+function fmtSal(m){ // m en M€/an
+  return m.toFixed(2).replace(/\.?0+$/,'').replace('.', ',') + ' M€/an';
+}
 function initials(name){
   const parts=name.split(' ').filter(Boolean);
   return ((parts[0]?.[0]||'')+(parts[parts.length-1]?.[0]||'')).toUpperCase();
@@ -438,6 +473,10 @@ function statusTag(p, prefix=''){
   if(p.status==='loan') return `<span class="tag loan">${prefix}Prêté</span>`;
   if(p.status==='expiring') return `<span class="tag exp">${prefix}Fin de contrat</span>`;
   return '';
+}
+function salaryPill(p){
+  if(p.sal==null) return '';
+  return `<span class="val sal" title="Salaire annuel brut estimé (Capology)">💶 ${fmtSal(p.sal)}</span>`;
 }
 function photoHTML(p, cls){
   return `<img class="${cls}" src="${p.img}" alt="${p.name}" loading="lazy"
@@ -462,7 +501,7 @@ function buildPoolCard(p){
       ${photoHTML(p,'photo')}
       <div class="pc-info">
         <div class="name">${lastName(p.name)}</div>
-        <div class="tags">${statusTag(p)}${money}</div>
+        <div class="tags">${statusTag(p)}${money}${salaryPill(p)}</div>
       </div>
     </div>
     <div class="quick">

@@ -745,13 +745,10 @@ function loadCommunity(){
   const box=$('#commList');
   if(!CONFIG.votesUrl){ $('#community').style.display='none'; return; }
   box.innerHTML='<div class="comm-loading">Chargement de l\'avis de la communauté…</div>';
-  const cb='__omComm'+Date.now();
-  const s=document.createElement('script');
-  const done=ok=>{ try{delete window[cb];}catch(_){window[cb]=undefined;} if(s.parentNode) s.parentNode.removeChild(s); };
-  window[cb]=function(data){ renderCommunity(data); done(true); };
-  s.onerror=function(){ box.innerHTML='<div class="comm-loading">Avis de la communauté indisponible pour le moment.</div>'; done(false); };
-  s.src=CONFIG.votesUrl+'?callback='+cb+'&_='+Date.now();
-  document.body.appendChild(s);
+  fetch(CONFIG.votesUrl + '?_=' + Date.now(), {method:'GET'})
+    .then(r=>r.json())
+    .then(data=>renderCommunity(data))
+    .catch(()=>{ box.innerHTML='<div class="comm-loading">Avis de la communauté indisponible pour le moment.</div>'; postHeight(); });
 }
 function renderCommunity(data){
   const box=$('#commList');

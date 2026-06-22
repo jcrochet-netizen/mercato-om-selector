@@ -45,6 +45,10 @@ Tout est en haut de la balise `<script>` dans `index.html` :
 
 - **`CONFIG.shareUrl`** : remplace par l'URL de ta page WordPress (utilisée dans les partages).
 - **`CONFIG.hashtags`** : hashtags du tweet.
+- **`CONFIG.votesUrl`** : endpoint Google Apps Script qui collecte les votes et renvoie les
+  statistiques (garder/vendre par joueur). Laisser vide pour désactiver la fonctionnalité
+  « Avis de la communauté ». Les votes sont écrits en `POST` (fire-and-forget) et lus en JSONP ;
+  les données atterrissent dans le Google Sheet associé (onglets `Votes` bruts + `Tally` agrégé).
 - **`PLAYERS`** : tableau de l'effectif. Le champ **`val`** = valeur marchande estimée en **M€**
   → modifie-le librement (ex : `"val": 28`). Tu peux aussi retirer/ajouter un joueur.
 - **`LOAN`** : joueurs **prêtés** (n'appartiennent pas à l'OM). `nom -> option d'achat (M€)` ou

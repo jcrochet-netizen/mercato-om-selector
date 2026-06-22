@@ -204,6 +204,7 @@
   .rcol li .rv.pos{color:var(--keep-deep);}
   .rcol li .rv.cost{color:var(--cost-deep);}
   .rcol li .rv.mut{color:var(--muted);font-weight:700;}
+  .rcol li .rsal{font-size:10.5px;color:var(--muted);font-weight:600;}
   .rcol .ctot{margin-top:8px;font-size:12.5px;font-weight:800;text-align:right;}
   .rcol.keep .ctot{color:var(--cost-deep);}
   .empty-col{color:#9aabbd;font-size:13px;text-align:center;padding:16px 0;border:1px dashed #cdd9e4;border-radius:10px;}
@@ -480,6 +481,10 @@ function salaryPill(p){
   if(p.sal==null) return '';
   return `<span class="val sal" title="Salaire annuel brut estimé (Capology)">💶 ${fmtSal(p.sal)}</span>`;
 }
+function salLine(p){
+  if(p.sal==null) return '';
+  return `<span class="rsal">💶 ${fmtSal(p.sal)}</span>`;
+}
 function photoHTML(p, cls){
   return `<img class="${cls}" src="${p.img}" alt="${p.name}" loading="lazy"
     onerror="this.outerHTML='<div class=&quot;${cls} photo-fallback&quot;>${initials(p.name)}</div>'">`;
@@ -687,7 +692,7 @@ function showResult(){
     else if(recovery(p)>0) rv=`<span class="rv mut">${fmtM(p.val)}</span>`;
     else rv=`<span class="rv mut">${p.status==='loan'?'Prêté':'Libre'}</span>`;
     const sub = p.status==='returning' ? statusTag(p) : '';
-    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}</span>${rv}</li>`;
+    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}${salLine(p)}</span>${rv}</li>`;
   };
   const liSell=p=>{
     const rv = recovery(p)>0 ? `<span class="rv pos">+${fmtM(p.val)}</span>` : `<span class="rv mut">0 €</span>`;
@@ -695,7 +700,7 @@ function showResult(){
     if(p.status==='loan') sub=`<span class="tag loan" style="margin-top:2px">Prêté · retour club</span>`;
     else if(p.status==='expiring') sub=`<span class="tag exp" style="margin-top:2px">Fin de contrat · libre</span>`;
     else if(p.status==='returning') sub=statusTag(p);
-    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}</span>${rv}</li>`;
+    return `<li>${photoHTML(p,'mini')}<span class="rn"><b>${lastName(p.name)}</b>${sub}${salLine(p)}</span>${rv}</li>`;
   };
 
   $('#rKeep').innerHTML = keep.length ? keep.map(liKeep).join('') : '<div class="empty-col">Aucun joueur gardé</div>';

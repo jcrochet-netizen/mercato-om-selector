@@ -216,6 +216,8 @@
   .comm-legend .ci-keep{background:var(--keep);}
   .comm-legend .ci-sell{background:var(--sell);}
   .comm-loading{text-align:center;color:var(--muted);font-size:13px;padding:16px 0;}
+  .comm-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(43,170,223,.25);border-top-color:var(--om-blue);border-radius:50%;animation:comm-spin .7s linear infinite;vertical-align:-3px;margin-right:8px;}
+  @keyframes comm-spin{to{transform:rotate(360deg);}}
   .comm-row{display:flex;align-items:center;gap:9px;padding:5px 2px;}
   .comm-row .mini{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:#e8eef5;}
   .comm-row .mini.photo-fallback{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
@@ -333,7 +335,7 @@
     <div class="community" id="community">
       <h4>📊 L'avis de la communauté</h4>
       <div class="comm-legend"><span><i class="ci-keep"></i> Garder</span><span><i class="ci-sell"></i> Vendre</span></div>
-      <div id="commList"><div class="comm-loading">Chargement de l'avis de la communauté…</div></div>
+      <div id="commList"><div class="comm-loading"><span class="comm-spinner"></span>Chargement de l'avis de la communauté…</div></div>
     </div>
     <div class="share">
       <h4>Partage ta sélection 📣</h4>
@@ -744,7 +746,7 @@ function submitVotes(){
 function loadCommunity(){
   const box=$('#commList');
   if(!CONFIG.votesUrl){ $('#community').style.display='none'; return; }
-  box.innerHTML='<div class="comm-loading">Chargement de l\'avis de la communauté…</div>';
+  box.innerHTML='<div class="comm-loading"><span class="comm-spinner"></span>Chargement de l\'avis de la communauté…</div>';
   fetch(CONFIG.votesUrl + '?_=' + Date.now(), {method:'GET'})
     .then(r=>r.json())
     .then(data=>renderCommunity(data))

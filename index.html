@@ -798,13 +798,20 @@ function renderCommunity(data){
    2) document.referrer (au moins le domaine de la page hôte)
    3) fallback : CONFIG.shareUrl */
 let HOST_URL='';
+let PARENT_ORIGIN='*'; // origine de la page parente, pour cibler les postMessage sortants
 try{
+  if(window.location.ancestorOrigins && window.location.ancestorOrigins.length){
+    PARENT_ORIGIN=window.location.ancestorOrigins[0];
+  } else if(document.referrer){
+    PARENT_ORIGIN=new URL(document.referrer).origin;
+  }
   if(document.referrer){
     const r=new URL(document.referrer);
     if(r.origin!==location.origin) HOST_URL=document.referrer;
   }
 }catch(_){}
 window.addEventListener('message', function(e){
+  if(e.source && e.source!==window.parent) return; // n'accepter que les messages du parent direct
   if(e.data && e.data.type==='mercato-om-parent-url' && typeof e.data.url==='string' && e.data.url){
     HOST_URL=e.data.url;
   }
@@ -984,7 +991,7 @@ $('#shImg').addEventListener('click', downloadImage);
    ================================================================= */
 function postHeight(){
   if(window.parent===window) return;
-  window.parent.postMessage({type:'mercato-om-height', height:document.documentElement.scrollHeight}, '*');
+  window.parent.postMessage({type:'mercato-om-height', height:document.documentElement.scrollHeight}, PARENT_ORIGIN);
 }
 window.addEventListener('resize', postHeight);
 

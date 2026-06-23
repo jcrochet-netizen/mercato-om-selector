@@ -903,18 +903,19 @@ async function downloadImage(){
   const btn=$('#shImg'); const old=btn.textContent;
   btn.disabled=true; btn.textContent='Génération…';
   try{
-    const {keep, sell, sellSum, net}=selection();
+    const {keep, sell, sellSum, optCost, salSaved, net}=selection();
     const imgs={};
     await Promise.all([...keep,...sell].map(async p=>{ imgs[p.id]=await loadImg(p.img); }));
     const logo=await loadImg('https://cdn.sportmonks.com/images/soccer/teams/12/44.png');
 
     const scale=2, W=1080, pad=44, colGap=28;
     const colW=(W-2*pad-colGap)/2;
-    const colTop=190, colHeadH=52, rowsGap=14, rowH=60;
+    const bilanTop=184, bilanCellH=84, bilanGap=14;
+    const colTop=bilanTop+bilanCellH+24, colHeadH=52, rowsGap=14, rowH=60;
     const maxRows=Math.max(keep.length, sell.length, 1);
     const rowsTop=colTop+colHeadH+rowsGap;
-    const footerTop=rowsTop+maxRows*rowH+10;
-    const H=footerTop+118;
+    const footerTop=rowsTop+maxRows*rowH+12;
+    const H=footerTop+72;
 
     const cv=document.createElement('canvas');
     cv.width=W*scale; cv.height=H*scale;
@@ -940,6 +941,25 @@ async function downloadImage(){
     // divider
     ctx.strokeStyle='#e6edf4'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad,164); ctx.lineTo(W-pad,164); ctx.stroke();
+
+    // bilan : 4 cellules
+    const salTxt = salSaved>0 ? '+'+salSaved.toFixed(1).replace(/\.0$/,'').replace('.', ',')+' M€/an' : '0 M€/an';
+    const bcells=[
+      {l:"Salaires économisés", v:salTxt, bg:'#eaf5fb', lc:'#1577B0', vc:'#1577B0'},
+      {l:"Ventes", v:fmtSigned(sellSum), bg:'#dff4e8', lc:'#0f8a52', vc:'#13965a'},
+      {l:"Options d'achat", v:(optCost>0?'−'+fmtM(optCost):'0 M€'), bg:'#fbedd9', lc:'#9a5a00', vc:'#9a5a00'},
+      {l:"Solde net", v:fmtSigned(net), bg:'#0B2540', lc:'#9fc7e6', vc:'#ffffff'}
+    ];
+    const bcW=(W-2*pad-3*bilanGap)/4;
+    bcells.forEach((c,i)=>{
+      const x=pad+i*(bcW+bilanGap);
+      ctx.save(); rrect(ctx,x,bilanTop,bcW,bilanCellH,14); ctx.fillStyle=c.bg; ctx.fill(); ctx.restore();
+      ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+      ctx.fillStyle=c.lc; ctx.font='800 15px '+FONT;
+      ctx.fillText(ellipsize(ctx,c.l.toUpperCase(),bcW-14), x+bcW/2, bilanTop+32);
+      ctx.fillStyle=c.vc; ctx.font='800 27px '+FONT;
+      ctx.fillText(ellipsize(ctx,c.v,bcW-14), x+bcW/2, bilanTop+64);
+    });
 
     // en-têtes de colonnes
     function colHeader(x, label, bg, fg){
@@ -981,10 +1001,8 @@ async function downloadImage(){
     ctx.strokeStyle='#e6edf4'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad,footerTop+8); ctx.lineTo(W-pad,footerTop+8); ctx.stroke();
     ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-    ctx.fillStyle='#0B2540'; ctx.font='800 27px '+FONT;
-    ctx.fillText('💰 '+fmtM(sellSum)+' récupérés   ·   Solde net '+fmtSigned(net), W/2, footerTop+52);
     ctx.fillStyle='#7a8aa0'; ctx.font='600 19px '+FONT;
-    ctx.fillText('Données : Sportmonks · Salaires : capology.com', W/2, footerTop+88);
+    ctx.fillText('Données : Sportmonks · Salaires : capology.com', W/2, footerTop+44);
 
     // téléchargement
     const a=document.createElement('a');

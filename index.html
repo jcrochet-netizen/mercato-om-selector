@@ -799,6 +799,7 @@ function renderCommunity(data){
    3) fallback : CONFIG.shareUrl */
 let HOST_URL='';
 let PARENT_ORIGIN='*'; // origine de la page parente, pour cibler les postMessage sortants
+let gotParentUrl=false;
 try{
   if(window.location.ancestorOrigins && window.location.ancestorOrigins.length){
     PARENT_ORIGIN=window.location.ancestorOrigins[0];
@@ -813,9 +814,21 @@ try{
 window.addEventListener('message', function(e){
   if(e.source && e.source!==window.parent) return; // n'accepter que les messages du parent direct
   if(e.data && e.data.type==='mercato-om-parent-url' && typeof e.data.url==='string' && e.data.url){
-    HOST_URL=e.data.url;
+    HOST_URL=e.data.url; gotParentUrl=true;
   }
 });
+/* Handshake : on réclame l'URL de la page au parent, avec relances jusqu'à réception.
+   Robuste quel que soit l'ordre de chargement (iframe avant/après le script parent). */
+(function(){
+  if(window.parent===window) return;
+  let tries=0;
+  (function ask(){
+    if(gotParentUrl || tries>=10) return;
+    tries++;
+    try{ window.parent.postMessage({type:'mercato-om-ready'}, PARENT_ORIGIN); }catch(_){}
+    setTimeout(ask, 400);
+  })();
+})();
 function shareUrl(){ return HOST_URL || CONFIG.shareUrl; }
 
 function shareText(){

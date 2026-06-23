@@ -365,7 +365,7 @@
    CONFIGURATION — à personnaliser
    ================================================================= */
 const CONFIG = {
-  shareUrl: "https://www.tonsite.fr/mercato-om/",   // URL de ta page WordPress
+  shareUrl: "https://www.tonsite.fr/mercato-om/",   // FALLBACK : utilisé seulement si l'URL de la page hôte n'est pas détectée
   hashtags: "MercatoOM,TeamOM,DroitAuBut",
   // Endpoint Google Apps Script (collecte + stats des votes). Vide = fonctionnalité désactivée.
   votesUrl: "https://script.google.com/macros/s/AKfycby_QEtleljD_AHJKSwQvUbjRn4pjRXtc4dp7OpTH4hMzuJNfF1Xa8HrYXpGLvu1rOHq/exec"
@@ -793,6 +793,24 @@ function renderCommunity(data){
 /* =================================================================
    PARTAGE
    ================================================================= */
+/* URL de la page hôte pour les partages — détectée automatiquement :
+   1) message postMessage envoyé par la page parente (URL complète, le plus précis)
+   2) document.referrer (au moins le domaine de la page hôte)
+   3) fallback : CONFIG.shareUrl */
+let HOST_URL='';
+try{
+  if(document.referrer){
+    const r=new URL(document.referrer);
+    if(r.origin!==location.origin) HOST_URL=document.referrer;
+  }
+}catch(_){}
+window.addEventListener('message', function(e){
+  if(e.data && e.data.type==='mercato-om-parent-url' && typeof e.data.url==='string' && e.data.url){
+    HOST_URL=e.data.url;
+  }
+});
+function shareUrl(){ return HOST_URL || CONFIG.shareUrl; }
+
 function shareText(){
   const {keep, sell, sellSum, optCost, net}=selection();
   let t=`🔵⚪ Mon Mercato OM 2026 !\n`;
@@ -803,16 +821,16 @@ function shareText(){
   return t;
 }
 const openShare=u=>window.open(u,'_blank','noopener,noreferrer');
-$('#shX').addEventListener('click', ()=>openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText())}&url=${encodeURIComponent(CONFIG.shareUrl)}&hashtags=${encodeURIComponent(CONFIG.hashtags)}`));
-$('#shFb').addEventListener('click', ()=>openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(CONFIG.shareUrl)}&quote=${encodeURIComponent(shareText())}`));
-$('#shWa').addEventListener('click', ()=>openShare(`https://wa.me/?text=${encodeURIComponent(shareText()+'\n'+CONFIG.shareUrl)}`));
+$('#shX').addEventListener('click', ()=>openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText())}&url=${encodeURIComponent(shareUrl())}&hashtags=${encodeURIComponent(CONFIG.hashtags)}`));
+$('#shFb').addEventListener('click', ()=>openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl())}&quote=${encodeURIComponent(shareText())}`));
+$('#shWa').addEventListener('click', ()=>openShare(`https://wa.me/?text=${encodeURIComponent(shareText()+'\n'+shareUrl())}`));
 $('#shCopy').addEventListener('click', async ()=>{
-  try{ await navigator.clipboard.writeText(shareText()+'\n'+CONFIG.shareUrl); $('#copied').textContent='✓ Texte copié !'; }
+  try{ await navigator.clipboard.writeText(shareText()+'\n'+shareUrl()); $('#copied').textContent='✓ Texte copié !'; }
   catch(_){ $('#copied').textContent='Copie impossible — sélectionne et copie manuellement.'; }
 });
 if(navigator.share){
   const b=$('#shNative'); b.style.display='inline-flex';
-  b.addEventListener('click', ()=>navigator.share({title:'Mercato OM 2026', text:shareText(), url:CONFIG.shareUrl}).catch(()=>{}));
+  b.addEventListener('click', ()=>navigator.share({title:'Mercato OM 2026', text:shareText(), url:shareUrl()}).catch(()=>{}));
 }
 
 /* =================================================================

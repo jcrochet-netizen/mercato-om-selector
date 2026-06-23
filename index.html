@@ -366,7 +366,7 @@
    ================================================================= */
 const CONFIG = {
   shareUrl: "https://www.tonsite.fr/mercato-om/",   // FALLBACK : utilisé seulement si l'URL de la page hôte n'est pas détectée
-  hashtags: "MercatoOM,TeamOM,DroitAuBut",
+  hashtags: "MercatOM,TeamOM",
   // Endpoint Google Apps Script (collecte + stats des votes). Vide = fonctionnalité désactivée.
   votesUrl: "https://script.google.com/macros/s/AKfycby_QEtleljD_AHJKSwQvUbjRn4pjRXtc4dp7OpTH4hMzuJNfF1Xa8HrYXpGLvu1rOHq/exec"
 };
@@ -834,7 +834,7 @@ function shareUrl(){ return HOST_URL || CONFIG.shareUrl; }
 function shareText(){
   const {keep, sell, sellSum, optCost, net}=selection();
   let t=`🔵⚪ Mon Mercato OM 2026 !\n`;
-  t+=`Je garde ${keep.length} joueur(s) et je me sépare de ${sell.length}.\n`;
+  t+=`Je garde ${keep.length} joueur${keep.length>1?'s':''} et je me sépare de ${sell.length}.\n`;
   t+=`💰 ${fmtM(sellSum)} récupérés en ventes`;
   if(optCost) t+=` · ${fmtM(optCost)} d'options d'achat à payer`;
   t+=`.\n🧮 Solde net : ${fmtSigned(net)}.\nEt toi, tu gardes qui ? 👇`;
